@@ -76,6 +76,26 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);vertical-
 .barline i{display:block;height:10px;border-radius:5px;background:var(--accent);min-width:2px}
 .actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 #copyArea{position:absolute;left:-9999px}
+.eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.folha{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.fh{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:flex-end}
+.fh-nome{display:flex;flex-direction:column;align-items:flex-end}.fh-nome b{font-family:var(--display);font-size:20px}
+.assin{display:flex;gap:24px;margin-top:20px}.assin div{flex:1;font-size:12px;color:var(--muted)}.assin span{display:block;border-top:1px solid var(--fg);margin-top:30px}
+.mini{padding:5px 10px;font-size:12px}
+.sel{font:inherit;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--fg)}
+@media print{
+ :root{--bg:#fff;--surface:#fff;--surface-2:#eef2fa;--line:#b8c4dc;--fg:#000;--muted:#444;--accent:#1655c9;--ok:#0b5c30;--ok-soft:#dcf3e5;--warn:#7a4800;--warn-soft:#fbefd6;--no:#555;--no-soft:#eee;color-scheme:light}
+ .bar,.noprint{display:none!important}
+ body{background:#fff}
+ .wrap{padding:0;max-width:none;gap:0}
+ .folha{border:0;border-radius:0;padding:0;break-after:page;page-break-after:always}
+ .folha:last-of-type{break-after:auto;page-break-after:auto}
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .tbl{overflow:visible}
+ th,td{white-space:normal;padding:5px 8px}
+ .stat{min-width:0}
+ @page{size:A4;margin:12mm}
+}
 </style>
 </head>
 <body>
@@ -84,6 +104,7 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);vertical-
   <div class="tabs" id="tabs" hidden>
     <button type="button" data-v="apuracao" aria-pressed="true">Apuração</button>
     <button type="button" data-v="metricas" aria-pressed="false">Métricas</button>
+    <button type="button" data-v="relatorio" aria-pressed="false">Relatórios</button>
   </div>
   <div class="actions"><select id="ciclo" aria-label="Ciclo" hidden></select><span class="st" id="st"></span></div>
 </div></div>
@@ -253,14 +274,14 @@ function atualizar(){
   const termo=s=>num(get(CICLO,"_termo",s).valor), pago=s=>num(get(CICLO,"_pago",s).valor);
   const pend=vs.filter(s=>!pago(s)).reduce((a,s)=>a+r.porVend[s].total,0);
   const bat=vs.reduce((a,s)=>a+r.porVend[s].batidas,0),pos=vs.reduce((a,s)=>a+r.porVend[s].possiveis,0);
-  $("#resumo").innerHTML=`<div class="meta-head"><h2>Resumo a pagar</h2><div class="actions"><button class="btn" id="copy">Copiar para WhatsApp</button><span class="small muted" id="copyMsg"></span></div></div>
+  $("#resumo").innerHTML=`<div class="meta-head"><h2>Resumo a pagar</h2><div class="actions"><button class="btn ghost" id="copy">Copiar resumo geral</button><span class="small muted" id="copyMsg"></span></div></div>
    <div class="stats"><div class="stat"><b>${brl(r.total)}</b><span>Total de prêmios</span></div><div class="stat"><b>${brl(pend)}</b><span>Ainda não pago</span></div>
    <div class="stat"><b>${pos?Math.round(bat/pos*100):0}%</b><span>Metas batidas (${bat} de ${pos})</span></div></div>
-   <div class="tbl"><table><thead><tr><th>Vendedor</th>${secoes.map(s=>`<th class="r">${esc(s.replace(/^\d+\.\s*/,""))}</th>`).join("")}<th class="r">Total</th><th>Termo assinado</th><th>Pago</th></tr></thead><tbody>${
+   <div class="tbl"><table><thead><tr><th>Vendedor</th>${secoes.map(s=>`<th class="r">${esc(s.replace(/^\d+\.\s*/,""))}</th>`).join("")}<th class="r">Total</th><th>Termo assinado</th><th>Pago</th><th>WhatsApp</th></tr></thead><tbody>${
    vs.map(s=>`<tr><td><b>${esc(s)}</b></td>${secoes.map(x=>`<td class="r">${r.porVend[s].secoes[x]?brl(r.porVend[s].secoes[x]):"—"}</td>`).join("")}<td class="r money">${brl(r.porVend[s].total)}</td>
    <td><input type="checkbox" data-c="_termo" data-v="${esc(s)}" data-k="valor" ${termo(s)?"checked":""} aria-label="Termo assinado ${esc(s)}"></td>
-   <td><input type="checkbox" data-c="_pago" data-v="${esc(s)}" data-k="valor" ${pago(s)?"checked":""} aria-label="Pago ${esc(s)}"></td></tr>`).join("")}</tbody>
-   <tfoot><tr><td>Total</td>${secoes.map(x=>`<td class="r">${brl(vs.reduce((a,s)=>a+(r.porVend[s].secoes[x]||0),0))}</td>`).join("")}<td class="r">${brl(r.total)}</td><td></td><td></td></tr></tfoot></table></div>
+   <td><input type="checkbox" data-c="_pago" data-v="${esc(s)}" data-k="valor" ${pago(s)?"checked":""} aria-label="Pago ${esc(s)}"></td><td><button type="button" class="btn ghost mini" data-wa="${esc(s)}">Copiar mensagem</button></td></tr>`).join("")}</tbody>
+   <tfoot><tr><td>Total</td>${secoes.map(x=>`<td class="r">${brl(vs.reduce((a,s)=>a+(r.porVend[s].secoes[x]||0),0))}</td>`).join("")}<td class="r">${brl(r.total)}</td><td></td><td></td><td></td></tr></tfoot></table></div>
    <div class="small muted">🔔 Antes de pagar, confira o toque do sino em cada conquista e o termo assinado.</div>`;
   $("#copy").onclick=()=>copiar(r,secoes);
 }
@@ -295,8 +316,74 @@ function renderMetricas(){
   $("#reconf").onclick=()=>renderSetup();
 }
 
-function render(){VIEW==="apuracao"?renderApuracao():renderMetricas();
+function render(){VIEW==="apuracao"?renderApuracao():VIEW==="metricas"?renderMetricas():renderRelatorio();
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===VIEW)));}
+
+/* ---------- Relatórios por colaborador e WhatsApp ---------- */
+let RELV="todos";
+function detalhe(s,r){
+  return metasDo(CICLO).map(m=>{
+    const x=r.metas[m.codigo],p=x.porVend[s],loja=m.escopo==="loja";
+    const valor=loja?x.loja.valor:p.valor;
+    const excluido=!!(m.excl&&!p.tier&&p.valor&&r.metas[m.excl]&&r.metas[m.excl].porVend[s].tier);
+    return {m,valor,tier:p.tier,lojaTier:loja?x.loja.tier:null,premio:p.premio,loja,trabalhou:p.participou,excluido};
+  });
+}
+const fmtV=(m,v)=>m.tipo==="reais"?brl(v):m.tipo==="sim_nao"?(v?"Sim":"Não"):fmtN(v);
+function resultado(d){
+  const m=d.m;
+  if(d.excluido)return ["Já recebeu a meta principal","no"];
+  if(d.loja&&m.part&&d.lojaTier&&!d.trabalhou)return ["Loja bateu, mas você não trabalhou","warn"];
+  if(d.premio>0)return ["Bateu"+(d.tier&&d.tier.nome!=="Meta"?": "+d.tier.nome:""),"ok"];
+  if(d.valor>0){const prox=m.faixas.find(f=>f.min>d.valor);return prox?["Não bateu. Faltou "+fmtV(m,prox.min-d.valor),"warn"]:["Não conta","no"];}
+  return ["Sem valor lançado","no"];
+}
+const nomeCiclo=()=>(ciclosList().find(c=>c.id===CICLO)||{}).nome||CICLO;
+function folhaHtml(s,r){
+  const det=detalhe(s,r),pv=r.porVend[s],secoes=[...new Set(det.map(d=>d.m.secao))];
+  let h=`<article class="folha"><header class="fh"><div><div class="eyebrow">Smart Soluções · Ciclo ${esc(nomeCiclo())}</div><h2>Relatório de premiação</h2></div>
+   <div class="fh-nome"><span class="small muted">Colaborador</span><b>${esc(s)}</b></div></header>
+   <div class="noprint actions"><button type="button" class="btn ghost mini" data-wa="${esc(s)}">Copiar mensagem para WhatsApp</button></div>
+   <div class="stats"><div class="stat"><b>${brl(pv.total)}</b><span>Total a receber</span></div><div class="stat"><b>${pv.batidas} de ${pv.possiveis}</b><span>Metas batidas</span></div></div>`;
+  secoes.forEach(sc=>{
+    const rows=det.filter(d=>d.m.secao===sc);
+    h+=`<h3>${esc(sc)}</h3><div class="tbl"><table><thead><tr><th>Meta</th><th class="r">Valor apurado</th><th>Resultado</th><th class="r">Prêmio</th></tr></thead><tbody>${
+     rows.map(d=>{const [t,c]=resultado(d);return `<tr><td><b>${esc(d.m.meta)}</b><div class="small muted">${esc(d.m.periodo||"")}${d.loja?" · valor da loja":""}</div></td><td class="r">${d.valor?fmtV(d.m,d.valor):"—"}</td><td><span class="chip ${c}">${esc(t)}</span></td><td class="r money">${d.premio?brl(d.premio):"—"}</td></tr>`;}).join("")}</tbody>
+     <tfoot><tr><td colspan="3">Subtotal</td><td class="r">${brl(pv.secoes[sc]||0)}</td></tr></tfoot></table></div>`;
+  });
+  h+=`<p class="small muted">Metas semanais e de fim de semana são pagas na segunda-feira seguinte. As demais, até o 5º dia útil do mês seguinte, na conta de premiação. Nenhum prêmio é pago sem o toque do sino na loja.</p>
+   <div class="assin"><div>Conferido pela gestão<span></span></div><div>Ciente do colaborador<span></span></div></div></article>`;
+  return h;
+}
+function renderRelatorio(){
+  if(!CICLO){$("#main").innerHTML=`<div class="card">Nenhum ciclo cadastrado na aba Campanhas.</div>`;return;}
+  const vs=vendedores(),r=apurar(CICLO),lista=RELV==="todos"||!vs.includes(RELV)?vs:[RELV];
+  $("#main").innerHTML=`<section class="card noprint"><h2>Relatório por colaborador</h2>
+   <div class="actions"><label for="relSel">Mostrar</label><select id="relSel" class="sel"><option value="todos">Todos os colaboradores</option>${vs.map(v=>`<option value="${esc(v)}" ${v===RELV?"selected":""}>${esc(v)}</option>`).join("")}</select>
+   <button type="button" class="btn" id="relPrint">Imprimir / salvar PDF</button></div>
+   <div class="small muted">Para entregar impresso, escolha "Todos os colaboradores" e imprima: cada pessoa sai em uma folha separada. Para guardar em PDF, escolha "Salvar como PDF" como impressora.</div></section>`+lista.map(s=>folhaHtml(s,r)).join("");
+  $("#relSel").onchange=e=>{RELV=e.target.value;renderRelatorio();};
+  $("#relPrint").onclick=()=>window.print();
+}
+function msgVend(s){
+  const r=apurar(CICLO),det=detalhe(s,r);
+  let t=`*Smart Soluções - Premiação*\nCiclo: ${nomeCiclo()}\n\nOlá, ${s}! Veja o que você conquistou:\n`;
+  let any=false;
+  [...new Set(det.map(d=>d.m.secao))].forEach(sc=>{
+    const it=det.filter(d=>d.m.secao===sc&&d.premio>0);if(!it.length)return;any=true;
+    t+=`\n*${sc.replace(/^\d+\.\s*/,"")}*\n`;
+    it.forEach(d=>{t+=`✔ ${d.m.meta}${d.m.periodo?" ("+d.m.periodo+")":""}${d.tier&&d.tier.nome!=="Meta"?" - "+d.tier.nome:""}: ${brl(d.premio)}\n`;});
+  });
+  if(!any)t+="\nAinda não há metas batidas neste ciclo.\n";
+  t+=`\n*Total a receber: ${brl(r.porVend[s].total)}*\n\nPagamento: metas semanais e de fim de semana na segunda-feira seguinte. As demais, até o 5º dia útil do mês seguinte.`;
+  return t;
+}
+function copyText(t,btn){
+  const ok=()=>{const o=btn.textContent;btn.textContent="Copiado ✓";setTimeout(()=>btn.textContent=o,2000);};
+  const fb=()=>{const a=$("#copyArea");a.value=t;a.select();try{document.execCommand("copy");ok();}catch(_){btn.textContent="Não copiou";}};
+  try{navigator.clipboard.writeText(t).then(ok,fb);}catch(_){fb();}
+}
+document.addEventListener("click",e=>{const b=e.target.closest("button[data-wa]");if(!b)return;copyText(msgVend(b.dataset.wa),b);});
 
 /* ---------- Eventos ---------- */
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.c)return;
