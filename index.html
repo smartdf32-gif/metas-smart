@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Metas Smart Soluções</title>
+<meta name="theme-color" content="#1655c9">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: barra do ciclo no topo, abas Apuração/Métricas, cartões por meta com tabela vendedor × valor */
+:root{
+  --bg:#f3f6fb; --surface:#fff; --surface-2:#eaf0f9; --line:#d5deec;
+  --fg:#12203a; --muted:#5a6886; --accent:#1655c9; --accent-ink:#fff; --accent-soft:#dfe9fb;
+  --ok:#137a43; --ok-soft:#dcf3e5; --warn:#9a5b00; --warn-soft:#fbefd6; --no:#7b869c; --no-soft:#eef1f6; --err:#b42318;
+  --display:"Sora",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0c1426; --surface:#131e35; --surface-2:#1a2844; --line:#28385a;
+  --fg:#e6ecf8; --muted:#97a6c4; --accent:#5b93f5; --accent-ink:#0a1222; --accent-soft:#1c2f55;
+  --ok:#5fd394; --ok-soft:#133525; --warn:#f0b44c; --warn-soft:#3a2b10; --no:#8592ab; --no-soft:#1b2640; --err:#ff8a7a; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--body);padding-bottom:env(safe-area-inset-bottom,0px)}
+.bar{position:sticky;top:0;z-index:5;background:var(--accent);color:var(--accent-ink);padding-top:env(safe-area-inset-top,0px)}
+.bar-in{max-width:1080px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.brand{font-family:var(--display);font-weight:700;font-size:17px}
+.bar select{font:inherit;border:0;border-radius:8px;padding:6px 10px;background:var(--surface);color:var(--fg)}
+.bar .st{font-size:12px;opacity:.9}
+.tabs{display:flex;gap:6px}
+.tabs button{font:inherit;font-size:13px;border:1px solid rgba(255,255,255,.5);background:transparent;color:inherit;border-radius:999px;padding:5px 12px;cursor:pointer}
+.tabs button[aria-pressed=true]{background:var(--surface);color:var(--accent);border-color:var(--surface)}
+.wrap{max-width:1080px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right,0px)) 64px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+h2{font-size:18px} h3{font-size:15px}
+.sec-title{display:flex;align-items:baseline;gap:10px;margin-top:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.meta-head{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:space-between;align-items:baseline}
+.muted{color:var(--muted)} .small{font-size:12px}
+.rules{display:flex;flex-wrap:wrap;gap:6px}
+.rule{font-size:12px;background:var(--surface-2);border-radius:6px;padding:3px 8px;font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--surface-2)}
+.r{text-align:right}
+tfoot td{font-weight:600;background:var(--surface-2)}
+input[type=text],input[type=password],input[type=url]{font:inherit;font-variant-numeric:tabular-nums;width:130px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+input.q{width:70px}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);vertical-align:middle}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px}
+.ok{background:var(--ok-soft);color:var(--ok)} .warn{background:var(--warn-soft);color:var(--warn)} .no{background:var(--no-soft);color:var(--no)}
+.money{font-weight:600}
+.loja{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.loja label{display:flex;gap:8px;align-items:center}
+.btn{font:inherit;font-weight:600;border:0;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:9px 14px;cursor:pointer}
+.btn.ghost{background:var(--surface-2);color:var(--fg)}
+.stats{display:flex;flex-wrap:wrap;gap:10px}
+.stat{background:var(--surface-2);border-radius:10px;padding:10px 14px;min-width:150px;flex:1}
+.stat b{display:block;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.setup{max-width:520px;margin:40px auto;width:100%}
+.setup label{display:flex;flex-direction:column;gap:4px;font-weight:500}
+.setup input{width:100%}
+.err{color:var(--err)}
+.barline{display:flex;align-items:center;gap:8px}
+.barline i{display:block;height:10px;border-radius:5px;background:var(--accent);min-width:2px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#copyArea{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<div class="bar"><div class="bar-in">
+  <span class="brand">Metas Smart</span>
+  <div class="tabs" id="tabs" hidden>
+    <button type="button" data-v="apuracao" aria-pressed="true">Apuração</button>
+    <button type="button" data-v="metricas" aria-pressed="false">Métricas</button>
+  </div>
+  <div class="actions"><select id="ciclo" aria-label="Ciclo" hidden></select><span class="st" id="st"></span></div>
+</div></div>
+
+<main class="wrap" id="main"></main>
+<textarea id="copyArea" aria-hidden="true" tabindex="-1"></textarea>
+
+<script>
+const LS="metas-smart-config";
+let CFG=null, DB=null, CICLO=null, VIEW="apuracao";
+let LANC={};            // chave ciclo|codigo|vendedor -> {valor, participou}
+let PEND={};            // itens a salvar
+let timer=null, saving=false;
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const brl=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const fmtN=n=>Number(n||0).toLocaleString("pt-BR");
+function num(v){if(v===null||v===undefined)return 0;if(typeof v==="number")return v;let t=String(v).trim().replace(/[R$\s]/g,"");if(!t)return 0;
+  if(t.includes(",")) t=t.replace(/\./g,"").replace(",","."); else if(/^\d{1,3}(\.\d{3})+$/.test(t)) t=t.replace(/\./g,"");
+  const n=parseFloat(t);return isFinite(n)?n:0;}
+function st(t,err){const e=$("#st");e.textContent=t;e.style.color=err?"#ffd2cc":"";}
+
+function loadCfg(){try{CFG=JSON.parse(localStorage.getItem(LS)||"null");}catch(_){CFG=null;}}
+function saveCfg(){try{localStorage.setItem(LS,JSON.stringify(CFG));}catch(_){}}
+
+async function api(body){
+  const r=await fetch(CFG.url,{method:"POST",body:JSON.stringify(Object.assign({pin:CFG.pin},body))});
+  const j=await r.json(); if(!j.ok) throw new Error(j.erro||"Erro"); return j;
+}
+
+/* ---------- Configuração ---------- */
+function renderSetup(msg){
+  $("#tabs").hidden=true;$("#ciclo").hidden=true;st("");
+  $("#main").innerHTML=`<div class="card setup">
+   <h2>Conectar à planilha</h2>
+   <p class="muted">Cole o link do Apps Script (termina em <b>/exec</b>) e o PIN que você definiu no script. Isso fica salvo só neste aparelho.</p>
+   <label for="cfgUrl">Link do Apps Script<input type="url" id="cfgUrl" value="${esc(CFG&&CFG.url||"")}" placeholder="https://script.google.com/macros/s/.../exec"></label>
+   <label for="cfgPin">PIN<input type="password" id="cfgPin" value="${esc(CFG&&CFG.pin||"")}"></label>
+   <div class="actions"><button class="btn" id="cfgGo">Conectar</button><span class="err" id="cfgErr">${esc(msg||"")}</span></div></div>`;
+  $("#cfgGo").onclick=async()=>{CFG={url:$("#cfgUrl").value.trim(),pin:$("#cfgPin").value.trim()};
+    $("#cfgErr").textContent="Conectando…";
+    try{await carregar();saveCfg();}catch(e){$("#cfgErr").textContent="Não conectou: "+e.message;}};
+}
+
+/* ---------- Dados ---------- */
+async function carregar(){
+  st("Carregando…");
+  DB=await api({acao:"dados"});
+  LANC={};
+  DB.lancamentos.forEach(l=>{LANC[[l.ciclo,l.codigo,l.vendedor].join("|")]={valor:l.valor,participou:l.participou==="sim"};});
+  const ciclos=ciclosList();
+  if(!CICLO||!ciclos.find(c=>c.id===CICLO)) CICLO=ciclos.length?ciclos[ciclos.length-1].id:null;
+  const sel=$("#ciclo");sel.innerHTML=ciclos.map(c=>`<option value="${esc(c.id)}" ${c.id===CICLO?"selected":""}>${esc(c.nome)}</option>`).join("");
+  sel.hidden=false;$("#tabs").hidden=false;
+  st("Conectado");render();
+}
+function ciclosList(){const m={};DB.campanhas.forEach(c=>{const id=String(c.ciclo);if(!m[id])m[id]={id,nome:c.ciclo_nome||id,inicio:String(c.inicio||"")};});
+  return Object.values(m).sort((a,b)=>a.inicio.localeCompare(b.inicio));}
+function vendedores(){return DB.vendedores.filter(v=>String(v.ativo).toLowerCase()!=="nao"&&String(v.ativo).toLowerCase()!=="não").map(v=>String(v.vendedor));}
+function metasDo(ciclo){
+  const m={};
+  DB.campanhas.filter(c=>String(c.ciclo)===ciclo).forEach(c=>{
+    const k=String(c.codigo);
+    if(!m[k]) m[k]={codigo:k,meta:c.meta,secao:c.secao,ordem:num(c.ordem),periodo:c.periodo,escopo:String(c.escopo).toLowerCase(),
+      tipo:String(c.tipo_valor).toLowerCase(),part:String(c.so_quem_participou).toLowerCase()==="sim",excl:String(c.exclui_se_bateu||""),
+      pagamento:c.pagamento,obs:c.observacao,faixas:[]};
+    m[k].faixas.push({nome:c.faixa,min:num(c.minimo),premio:num(c.premio)});
+  });
+  const list=Object.values(m);list.forEach(x=>x.faixas.sort((a,b)=>a.min-b.min));
+  return list.sort((a,b)=>a.ordem-b.ordem);
+}
+const get=(ciclo,cod,v)=>LANC[[ciclo,cod,v].join("|")]||{valor:"",participou:false};
+
+/* ---------- Motor de cálculo ---------- */
+function tier(v,faixas){let t=null;faixas.forEach(f=>{if(v>=f.min&&f.min>0)t=f;});return t;}
+function apurar(ciclo){
+  const metas=metasDo(ciclo),vs=vendedores();
+  const res={metas:{},porVend:Object.fromEntries(vs.map(v=>[v,{total:0,secoes:{},batidas:0,possiveis:0}])),total:0};
+  const hitInd={};
+  metas.forEach(m=>{
+    const r={meta:m,porVend:{},loja:null};
+    if(m.escopo==="loja"){
+      const v=num(get(ciclo,m.codigo,"LOJA").valor),t=tier(v,m.faixas);r.loja={valor:v,tier:t};
+      vs.forEach(s=>{const p=get(ciclo,m.codigo,s).participou;const ok=t&&(!m.part||p);r.porVend[s]={tier:ok?t:null,premio:ok?t.premio:0,participou:p};});
+    }else{
+      vs.forEach(s=>{const raw=get(ciclo,m.codigo,s).valor;const v=num(raw);let t=tier(v,m.faixas);
+        if(t&&m.excl&&hitInd[m.excl+"|"+s])t=null;
+        if(t)hitInd[m.codigo+"|"+s]=true;
+        r.porVend[s]={valor:v,raw,tier:t,premio:t?t.premio:0};});
+    }
+    vs.forEach(s=>{const x=r.porVend[s],pv=res.porVend[s];pv.total+=x.premio;pv.secoes[m.secao]=(pv.secoes[m.secao]||0)+x.premio;
+      if(!m.excl){pv.possiveis++;if(x.premio)pv.batidas++;}});
+    res.metas[m.codigo]=r;
+  });
+  res.total=vs.reduce((a,s)=>a+res.porVend[s].total,0);
+  return res;
+}
+
+/* ---------- Salvar ---------- */
+function marcar(cod,vend,patch){
+  const k=[CICLO,cod,vend].join("|");const atual=Object.assign({valor:"",participou:false},LANC[k],patch);LANC[k]=atual;
+  PEND[k]={codigo:cod,vendedor:vend,valor:atual.valor===""?"":num(atual.valor),participou:!!atual.participou};
+  st("Salvando…");clearTimeout(timer);timer=setTimeout(flush,900);
+}
+async function flush(){
+  if(saving)return; const itens=Object.values(PEND); if(!itens.length)return;
+  PEND={};saving=true;
+  try{const r=await api({acao:"salvar",ciclo:CICLO,itens});st("Salvo "+r.em.slice(11));}
+  catch(e){itens.forEach(i=>PEND[[CICLO,i.codigo,i.vendedor].join("|")]=i);st("Não salvou: "+e.message,true);}
+  saving=false; if(Object.keys(PEND).length) timer=setTimeout(flush,2000);
+}
+window.addEventListener("beforeunload",e=>{if(Object.keys(PEND).length||saving){e.preventDefault();e.returnValue="";}});
+
+/* ---------- Tela de apuração ---------- */
+function faixaTxt(m){const u=m.tipo==="reais"?brl:fmtN;
+  return m.faixas.map(f=>`<span class="rule">${esc(f.nome)}: ${m.tipo==="sim_nao"?"sim":u(f.min)} → ${brl(f.premio)}</span>`).join("");}
+function statusChip(m,valor,t,temValor){
+  if(t)return `<span class="chip ok">${esc(t.nome==="Meta"?"Batida ✓":t.nome)}</span>`;
+  if(!temValor)return `<span class="chip no">—</span>`;
+  const prox=m.faixas.find(f=>f.min>valor);
+  if(!prox)return `<span class="chip no">Não conta</span>`;
+  const falta=prox.min-valor;
+  return `<span class="chip warn">Faltou ${m.tipo==="reais"?brl(falta):fmtN(falta)}</span>`;
+}
+function inputFor(m,vend,val){
+  const id=`i_${m.codigo}_${vend}`.replace(/\W/g,"_");
+  if(m.tipo==="sim_nao")return `<input type="checkbox" id="${id}" data-c="${esc(m.codigo)}" data-v="${esc(vend)}" data-k="valor" ${num(val)?"checked":""} aria-label="${esc(m.meta)} ${esc(vend)}">`;
+  const show=val===""||val===null||val===undefined?"":(m.tipo==="reais"?Number(val).toLocaleString("pt-BR",{maximumFractionDigits:2}):String(val));
+  return `<input type="text" inputmode="decimal" class="${m.tipo==="reais"?"":"q"}" id="${id}" data-c="${esc(m.codigo)}" data-v="${esc(vend)}" data-k="valor" value="${esc(show)}" placeholder="${m.tipo==="reais"?"R$ 0,00":"0"}" aria-label="${esc(m.meta)} ${esc(vend)}">`;
+}
+function renderApuracao(){
+  if(!CICLO){$("#main").innerHTML=`<div class="card">Nenhum ciclo cadastrado na aba Campanhas.</div>`;return;}
+  const metas=metasDo(CICLO),vs=vendedores();
+  let html=`<section class="card" id="resumo"></section>`;
+  let secAtual=null;
+  metas.forEach(m=>{
+    if(m.secao!==secAtual){secAtual=m.secao;html+=`<div class="sec-title"><h2>${esc(m.secao)}</h2></div>`;}
+    html+=`<section class="card"><div class="meta-head"><h3>${esc(m.meta)}</h3><span class="small muted">${esc(m.periodo||"")}${m.pagamento?" · pago: "+esc(m.pagamento):""}</span></div>
+      <div class="rules">${faixaTxt(m)}</div>${m.obs?`<div class="small muted">${esc(m.obs)}</div>`:""}`;
+    if(m.escopo==="loja"){
+      const lv=get(CICLO,m.codigo,"LOJA").valor;
+      html+=`<div class="loja"><label>Valor da loja ${inputFor(m,"LOJA",lv)}</label><span data-o="loja_${esc(m.codigo)}"></span></div>`;
+      if(m.part){html+=`<div class="tbl"><table><thead><tr><th>Vendedor</th><th>Trabalhou?</th><th class="r">Prêmio</th></tr></thead><tbody>${
+        vs.map(s=>`<tr><td><b>${esc(s)}</b></td><td><input type="checkbox" data-c="${esc(m.codigo)}" data-v="${esc(s)}" data-k="participou" ${get(CICLO,m.codigo,s).participou?"checked":""} aria-label="Trabalhou ${esc(s)}"></td><td class="r money" data-o="p_${esc(m.codigo)}_${esc(s)}"></td></tr>`).join("")}</tbody></table></div>`;}
+    }else{
+      html+=`<div class="tbl"><table><thead><tr><th>Vendedor</th><th>${m.tipo==="reais"?"Valor apurado":m.tipo==="sim_nao"?"Sim?":"Quantidade"}</th><th>Status</th><th class="r">Prêmio</th></tr></thead><tbody>${
+        vs.map(s=>`<tr><td><b>${esc(s)}</b></td><td>${inputFor(m,s,get(CICLO,m.codigo,s).valor)}</td><td data-o="s_${esc(m.codigo)}_${esc(s)}"></td><td class="r money" data-o="p_${esc(m.codigo)}_${esc(s)}"></td></tr>`).join("")}</tbody></table></div>`;
+    }
+    html+=`</section>`;
+  });
+  $("#main").innerHTML=html;
+  atualizar();
+}
+const O=k=>document.querySelector(`[data-o="${CSS.escape(k)}"]`);
+function atualizar(){
+  if(VIEW!=="apuracao")return;
+  const r=apurar(CICLO),vs=vendedores();
+  Object.values(r.metas).forEach(x=>{const m=x.meta;
+    if(m.escopo==="loja"){const e=O("loja_"+m.codigo);if(e)e.innerHTML=statusChip(m,x.loja.valor,x.loja.tier,x.loja.valor>0)+(x.loja.tier?` <span class="small muted">${brl(x.loja.tier.premio)} por pessoa${m.part?" que trabalhou":""}</span>`:"");}
+    vs.forEach(s=>{const p=x.porVend[s];const pe=O("p_"+m.codigo+"_"+s);if(pe)pe.textContent=p.premio?brl(p.premio):"—";
+      const se=O("s_"+m.codigo+"_"+s);if(se){let c=statusChip(m,p.valor,p.tier,String(p.raw??"")!==""&&p.raw!==0);
+        if(!p.tier&&m.excl&&p.valor&&r.metas[m.excl]&&r.metas[m.excl].porVend[s].tier)c=`<span class="chip no">Já bateu a meta principal</span>`;se.innerHTML=c;}});
+  });
+  // resumo
+  const secoes=[...new Set(metasDo(CICLO).map(m=>m.secao))];
+  const termo=s=>num(get(CICLO,"_termo",s).valor), pago=s=>num(get(CICLO,"_pago",s).valor);
+  const pend=vs.filter(s=>!pago(s)).reduce((a,s)=>a+r.porVend[s].total,0);
+  const bat=vs.reduce((a,s)=>a+r.porVend[s].batidas,0),pos=vs.reduce((a,s)=>a+r.porVend[s].possiveis,0);
+  $("#resumo").innerHTML=`<div class="meta-head"><h2>Resumo a pagar</h2><div class="actions"><button class="btn" id="copy">Copiar para WhatsApp</button><span class="small muted" id="copyMsg"></span></div></div>
+   <div class="stats"><div class="stat"><b>${brl(r.total)}</b><span>Total de prêmios</span></div><div class="stat"><b>${brl(pend)}</b><span>Ainda não pago</span></div>
+   <div class="stat"><b>${pos?Math.round(bat/pos*100):0}%</b><span>Metas batidas (${bat} de ${pos})</span></div></div>
+   <div class="tbl"><table><thead><tr><th>Vendedor</th>${secoes.map(s=>`<th class="r">${esc(s.replace(/^\d+\.\s*/,""))}</th>`).join("")}<th class="r">Total</th><th>Termo assinado</th><th>Pago</th></tr></thead><tbody>${
+   vs.map(s=>`<tr><td><b>${esc(s)}</b></td>${secoes.map(x=>`<td class="r">${r.porVend[s].secoes[x]?brl(r.porVend[s].secoes[x]):"—"}</td>`).join("")}<td class="r money">${brl(r.porVend[s].total)}</td>
+   <td><input type="checkbox" data-c="_termo" data-v="${esc(s)}" data-k="valor" ${termo(s)?"checked":""} aria-label="Termo assinado ${esc(s)}"></td>
+   <td><input type="checkbox" data-c="_pago" data-v="${esc(s)}" data-k="valor" ${pago(s)?"checked":""} aria-label="Pago ${esc(s)}"></td></tr>`).join("")}</tbody>
+   <tfoot><tr><td>Total</td>${secoes.map(x=>`<td class="r">${brl(vs.reduce((a,s)=>a+(r.porVend[s].secoes[x]||0),0))}</td>`).join("")}<td class="r">${brl(r.total)}</td><td></td><td></td></tr></tfoot></table></div>
+   <div class="small muted">🔔 Antes de pagar, confira o toque do sino em cada conquista e o termo assinado.</div>`;
+  $("#copy").onclick=()=>copiar(r,secoes);
+}
+function copiar(r,secoes){
+  const vs=vendedores(),nome=(ciclosList().find(c=>c.id===CICLO)||{}).nome||CICLO;
+  let t=`*Premiação Smart Soluções, ciclo ${nome}*\n\n`;
+  vs.forEach(s=>{const p=r.porVend[s];const parts=secoes.filter(x=>p.secoes[x]).map(x=>`${x.replace(/^\d+\.\s*/,"")} ${brl(p.secoes[x])}`);
+    t+=`• ${s}: *${brl(p.total)}*${parts.length?" ("+parts.join(", ")+")":""}\n`;});
+  t+=`\nTotal: *${brl(r.total)}*`;
+  const msg=$("#copyMsg"),fb=()=>{const a=$("#copyArea");a.value=t;a.select();try{document.execCommand("copy");msg.textContent="Copiado.";}catch(_){msg.textContent="Não copiou.";}};
+  try{navigator.clipboard.writeText(t).then(()=>msg.textContent="Copiado.",fb);}catch(_){fb();}
+}
+
+/* ---------- Métricas ---------- */
+function renderMetricas(){
+  const ciclos=ciclosList(),vs=vendedores();
+  const dados=ciclos.map(c=>{const r=apurar(c.id);const fat=vs.reduce((a,s)=>a+num(get(c.id,"mes",s).valor),0);
+    const bat=vs.reduce((a,s)=>a+r.porVend[s].batidas,0),pos=vs.reduce((a,s)=>a+r.porVend[s].possiveis,0);return {c,r,fat,bat,pos};});
+  const maxP=Math.max(1,...dados.map(d=>d.r.total));
+  let html=`<section class="card"><h2>Evolução por ciclo</h2>
+   <div class="tbl"><table><thead><tr><th>Ciclo</th><th class="r">Faturamento individual somado</th><th class="r">Total de prêmios</th><th class="r">Prêmios ÷ faturamento</th><th>Metas batidas</th><th style="min-width:160px">Prêmios</th></tr></thead><tbody>${
+   dados.map(d=>`<tr><td><b>${esc(d.c.nome)}</b></td><td class="r">${brl(d.fat)}</td><td class="r money">${brl(d.r.total)}</td><td class="r">${d.fat?(d.r.total/d.fat*100).toLocaleString("pt-BR",{maximumFractionDigits:2})+"%":"—"}</td><td>${d.pos?Math.round(d.bat/d.pos*100):0}% (${d.bat}/${d.pos})</td><td><div class="barline"><i style="width:${Math.round(d.r.total/maxP*140)}px"></i></div></td></tr>`).join("")}</tbody></table></div>
+   <div class="small muted">Faturamento individual somado vem da meta de código "mes". Metas de apoio não entram na contagem de metas batidas.</div></section>`;
+  html+=`<section class="card"><h2>Prêmios por vendedor</h2><div class="tbl"><table><thead><tr><th>Vendedor</th>${dados.map(d=>`<th class="r">${esc(d.c.nome)}</th>`).join("")}<th class="r">Acumulado</th></tr></thead><tbody>${
+   vs.map(s=>`<tr><td><b>${esc(s)}</b></td>${dados.map(d=>`<td class="r">${brl(d.r.porVend[s].total)}</td>`).join("")}<td class="r money">${brl(dados.reduce((a,d)=>a+d.r.porVend[s].total,0))}</td></tr>`).join("")}</tbody></table></div></section>`;
+  html+=`<section class="card"><h2>Faturamento individual por vendedor</h2><div class="tbl"><table><thead><tr><th>Vendedor</th>${dados.map(d=>`<th class="r">${esc(d.c.nome)}</th>`).join("")}</tr></thead><tbody>${
+   vs.map(s=>`<tr><td><b>${esc(s)}</b></td>${dados.map(d=>{const v=num(get(d.c.id,"mes",s).valor),t=d.r.metas.mes&&d.r.metas.mes.porVend[s].tier;return `<td class="r">${v?brl(v):"—"}${t?` <span class="chip ok">${esc(t.nome)}</span>`:""}</td>`;}).join("")}</tr>`).join("")}</tbody></table></div></section>`;
+  html+=`<section class="card"><h2>Taxa de metas batidas por vendedor</h2><div class="tbl"><table><thead><tr><th>Vendedor</th>${dados.map(d=>`<th class="r">${esc(d.c.nome)}</th>`).join("")}</tr></thead><tbody>${
+   vs.map(s=>`<tr><td><b>${esc(s)}</b></td>${dados.map(d=>{const p=d.r.porVend[s];return `<td class="r">${p.possiveis?Math.round(p.batidas/p.possiveis*100)+"%":"—"}</td>`;}).join("")}</tr>`).join("")}</tbody></table></div></section>
+   <div class="actions"><button class="btn ghost" id="reconf">Trocar conexão</button></div>`;
+  $("#main").innerHTML=html;
+  $("#reconf").onclick=()=>renderSetup();
+}
+
+function render(){VIEW==="apuracao"?renderApuracao():renderMetricas();
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===VIEW)));}
+
+/* ---------- Eventos ---------- */
+document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.c)return;
+  if(t.type==="checkbox"){marcar(t.dataset.c,t.dataset.v,{[t.dataset.k]:t.dataset.k==="valor"?(t.checked?1:0):t.checked});atualizar();}});
+document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset.c||t.type==="checkbox")return;
+  const raw=t.value.trim();marcar(t.dataset.c,t.dataset.v,{valor:raw===""?"":num(raw)});atualizar();});
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-v]");if(!b)return;VIEW=b.dataset.v;render();});
+$("#ciclo").addEventListener("change",e=>{CICLO=e.target.value;render();});
+
+loadCfg();
+if(CFG&&CFG.url) carregar().catch(e=>renderSetup("Não conectou: "+e.message)); else renderSetup();
+</script>
+</body>
+</html>
