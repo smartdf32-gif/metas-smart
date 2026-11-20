@@ -234,6 +234,8 @@ function statusChip(m,valor,t,temValor){
   const falta=prox.min-valor;
   return `<span class="chip warn">Faltou ${m.tipo==="reais"?brl(falta):fmtN(falta)}</span>`;
 }
+const PG=(cod,s)=>num(get(CICLO,"pg_"+cod,s).valor);
+const pgCell=(m,s)=>`<td class="pgc"><input type="checkbox" class="pgbox" data-pg="${esc(m.codigo)}|${esc(s)}" data-c="pg_${esc(m.codigo)}" data-v="${esc(s)}" data-k="valor" ${PG(m.codigo,s)?"checked":""} aria-label="Pago ${esc(m.meta)} ${esc(s)}"></td>`;
 function inputFor(m,vend,val){
   const id=`i_${m.codigo}_${vend}`.replace(/\W/g,"_");
   if(m.tipo==="sim_nao")return `<input type="checkbox" id="${id}" data-c="${esc(m.codigo)}" data-v="${esc(vend)}" data-k="valor" ${num(val)?"checked":""} aria-label="${esc(m.meta)} ${esc(vend)}">`;
@@ -252,11 +254,11 @@ function renderApuracao(){
     if(m.escopo==="loja"){
       const lv=get(CICLO,m.codigo,"LOJA").valor;
       html+=`<div class="loja"><label>Valor da loja ${inputFor(m,"LOJA",lv)}</label><span data-o="loja_${esc(m.codigo)}"></span></div>`;
-      if(m.part){html+=`<div class="tbl"><table><thead><tr><th>Vendedor</th><th>Trabalhou?</th><th class="r">Prêmio</th></tr></thead><tbody>${
-        vs.map(s=>`<tr><td><b>${esc(s)}</b></td><td><input type="checkbox" data-c="${esc(m.codigo)}" data-v="${esc(s)}" data-k="participou" ${get(CICLO,m.codigo,s).participou?"checked":""} aria-label="Trabalhou ${esc(s)}"></td><td class="r money" data-o="p_${esc(m.codigo)}_${esc(s)}"></td></tr>`).join("")}</tbody></table></div>`;}
+      html+=`<div class="tbl"><table><thead><tr><th>Vendedor</th>${m.part?"<th>Trabalhou?</th>":""}<th class="r">Prêmio</th><th>Pago</th></tr></thead><tbody>${
+        vs.map(s=>`<tr><td><b>${esc(s)}</b></td>${m.part?`<td><input type="checkbox" data-c="${esc(m.codigo)}" data-v="${esc(s)}" data-k="participou" ${get(CICLO,m.codigo,s).participou?"checked":""} aria-label="Trabalhou ${esc(s)}"></td>`:""}<td class="r money" data-o="p_${esc(m.codigo)}_${esc(s)}"></td>${pgCell(m,s)}</tr>`).join("")}</tbody></table></div>`;
     }else{
-      html+=`<div class="tbl"><table><thead><tr><th>Vendedor</th><th>${m.tipo==="reais"?"Valor apurado":m.tipo==="sim_nao"?"Sim?":"Quantidade"}</th><th>Status</th>${m.folga?"<th>Não trabalhou</th>":""}<th class="r">Prêmio</th></tr></thead><tbody>${
-        vs.map(s=>`<tr><td><b>${esc(s)}</b></td><td>${inputFor(m,s,get(CICLO,m.codigo,s).valor)}</td><td data-o="s_${esc(m.codigo)}_${esc(s)}"></td>${m.folga?`<td><input type="checkbox" id="f_${esc(m.codigo)}_${esc(s)}" data-c="${esc(m.codigo)}" data-v="${esc(s)}" data-k="participou" ${get(CICLO,m.codigo,s).participou?"checked":""} aria-label="Não trabalhou ${esc(s)}"></td>`:""}<td class="r money" data-o="p_${esc(m.codigo)}_${esc(s)}"></td></tr>`).join("")}</tbody></table></div>`;
+      html+=`<div class="tbl"><table><thead><tr><th>Vendedor</th><th>${m.tipo==="reais"?"Valor apurado":m.tipo==="sim_nao"?"Sim?":"Quantidade"}</th><th>Status</th>${m.folga?"<th>Não trabalhou</th>":""}<th class="r">Prêmio</th><th>Pago</th></tr></thead><tbody>${
+        vs.map(s=>`<tr><td><b>${esc(s)}</b></td><td>${inputFor(m,s,get(CICLO,m.codigo,s).valor)}</td><td data-o="s_${esc(m.codigo)}_${esc(s)}"></td>${m.folga?`<td><input type="checkbox" id="f_${esc(m.codigo)}_${esc(s)}" data-c="${esc(m.codigo)}" data-v="${esc(s)}" data-k="participou" ${get(CICLO,m.codigo,s).participou?"checked":""} aria-label="Não trabalhou ${esc(s)}"></td>`:""}<td class="r money" data-o="p_${esc(m.codigo)}_${esc(s)}"></td>${pgCell(m,s)}</tr>`).join("")}</tbody></table></div>`;
     }
     html+=`</section>`;
   });
@@ -275,16 +277,21 @@ function atualizar(){
   });
   // resumo
   const secoes=[...new Set(metasDo(CICLO).map(m=>m.secao))];
-  const termo=s=>num(get(CICLO,"_termo",s).valor), pago=s=>num(get(CICLO,"_pago",s).valor);
-  const pend=vs.filter(s=>!pago(s)).reduce((a,s)=>a+r.porVend[s].total,0);
+  const termo=s=>num(get(CICLO,"_termo",s).valor);
+  const mts=metasDo(CICLO);
+  const pagoV=s=>mts.reduce((a,m)=>a+(PG(m.codigo,s)?r.metas[m.codigo].porVend[s].premio:0),0);
+  const tudoPago=s=>r.porVend[s].total>0&&mts.every(m=>!(r.metas[m.codigo].porVend[s].premio>0)||PG(m.codigo,s));
+  document.querySelectorAll("input.pgbox").forEach(b=>{const [c,v]=b.dataset.pg.split("|");const x=r.metas[c]&&r.metas[c].porVend[v];
+    b.checked=!!PG(c,v);b.style.visibility=x&&x.premio>0?"visible":"hidden";});
+  const jaPago=vs.reduce((a,s)=>a+pagoV(s),0),pend=r.total-jaPago;
   const bat=vs.reduce((a,s)=>a+r.porVend[s].batidas,0),pos=vs.reduce((a,s)=>a+r.porVend[s].possiveis,0);
   $("#resumo").innerHTML=`<div class="meta-head"><h2>Resumo a pagar</h2><div class="actions"><button class="btn ghost" id="copy">Copiar resumo geral</button><span class="small muted" id="copyMsg"></span></div></div>
-   <div class="stats"><div class="stat"><b>${brl(r.total)}</b><span>Total de prêmios</span></div><div class="stat"><b>${brl(pend)}</b><span>Ainda não pago</span></div>
+   <div class="stats"><div class="stat"><b>${brl(r.total)}</b><span>Total de prêmios</span></div><div class="stat"><b>${brl(jaPago)}</b><span>Já pago</span></div><div class="stat"><b>${brl(pend)}</b><span>Ainda não pago</span></div>
    <div class="stat"><b>${pos?Math.round(bat/pos*100):0}%</b><span>Metas batidas (${bat} de ${pos})</span></div></div>
-   <div class="tbl"><table><thead><tr><th>Vendedor</th>${secoes.map(s=>`<th class="r">${esc(s.replace(/^\d+\.\s*/,""))}</th>`).join("")}<th class="r">Total</th><th>Termo assinado</th><th>Pago</th><th>WhatsApp</th></tr></thead><tbody>${
+   <div class="tbl"><table><thead><tr><th>Vendedor</th>${secoes.map(s=>`<th class="r">${esc(s.replace(/^\d+\.\s*/,""))}</th>`).join("")}<th class="r">Total</th><th>Termo assinado</th><th>Pago (tudo)</th><th>WhatsApp</th></tr></thead><tbody>${
    vs.map(s=>`<tr><td><b>${esc(s)}</b></td>${secoes.map(x=>`<td class="r">${r.porVend[s].secoes[x]?brl(r.porVend[s].secoes[x]):"—"}</td>`).join("")}<td class="r money">${brl(r.porVend[s].total)}</td>
    <td><input type="checkbox" data-c="_termo" data-v="${esc(s)}" data-k="valor" ${termo(s)?"checked":""} aria-label="Termo assinado ${esc(s)}"></td>
-   <td><input type="checkbox" data-c="_pago" data-v="${esc(s)}" data-k="valor" ${pago(s)?"checked":""} aria-label="Pago ${esc(s)}"></td><td><button type="button" class="btn ghost mini" data-wa="${esc(s)}">Copiar mensagem</button></td></tr>`).join("")}</tbody>
+   <td><input type="checkbox" data-all="${esc(s)}" ${tudoPago(s)?"checked":""} aria-label="Marcar tudo como pago ${esc(s)}"><div class="small muted">${pagoV(s)?brl(pagoV(s))+" pago":""}</div></td><td><button type="button" class="btn ghost mini" data-wa="${esc(s)}">Copiar mensagem</button></td></tr>`).join("")}</tbody>
    <tfoot><tr><td>Total</td>${secoes.map(x=>`<td class="r">${brl(vs.reduce((a,s)=>a+(r.porVend[s].secoes[x]||0),0))}</td>`).join("")}<td class="r">${brl(r.total)}</td><td></td><td></td><td></td></tr></tfoot></table></div>
    <div class="small muted">🔔 Antes de pagar, confira o toque do sino em cada conquista e o termo assinado.</div>`;
   $("#copy").onclick=()=>copiar(r,secoes);
@@ -330,7 +337,7 @@ function detalhe(s,r){
     const x=r.metas[m.codigo],p=x.porVend[s],loja=m.escopo==="loja";
     const valor=loja?x.loja.valor:p.valor;
     const excluido=!!(m.excl&&!p.tier&&p.valor&&r.metas[m.excl]&&r.metas[m.excl].porVend[s].tier);
-    return {m,valor,tier:p.tier,lojaTier:loja?x.loja.tier:null,premio:p.premio,loja,trabalhou:p.participou,folga:!!p.folga,excluido};
+    return {m,valor,tier:p.tier,lojaTier:loja?x.loja.tier:null,premio:p.premio,pago:!!PG(m.codigo,s),loja,trabalhou:p.participou,folga:!!p.folga,excluido};
   });
 }
 const fmtV=(m,v)=>m.tipo==="reais"?brl(v):m.tipo==="sim_nao"?(v?"Sim":"Não"):fmtN(v);
@@ -353,7 +360,7 @@ function folhaHtml(s,r){
   secoes.forEach(sc=>{
     const rows=det.filter(d=>d.m.secao===sc);
     h+=`<h3>${esc(sc)}</h3><div class="tbl"><table><thead><tr><th>Meta</th><th class="r">Valor apurado</th><th>Resultado</th><th class="r">Prêmio</th></tr></thead><tbody>${
-     rows.map(d=>{const [t,c]=resultado(d);return `<tr><td><b>${esc(d.m.meta)}</b><div class="small muted">${esc(d.m.periodo||"")}${d.loja?" · valor da loja":""}</div></td><td class="r">${d.valor?fmtV(d.m,d.valor):"—"}</td><td><span class="chip ${c}">${esc(t)}</span></td><td class="r money">${d.premio?brl(d.premio):"—"}</td></tr>`;}).join("")}</tbody>
+     rows.map(d=>{const [t,c]=resultado(d);return `<tr><td><b>${esc(d.m.meta)}</b><div class="small muted">${esc(d.m.periodo||"")}${d.loja?" · valor da loja":""}</div></td><td class="r">${d.valor?fmtV(d.m,d.valor):"—"}</td><td><span class="chip ${c}">${esc(t)}</span></td><td class="r money">${d.premio?brl(d.premio):"—"}${d.premio&&d.pago?`<div class="small">Pago ✓</div>`:""}</td></tr>`;}).join("")}</tbody>
      <tfoot><tr><td colspan="3">Subtotal</td><td class="r">${brl(pv.secoes[sc]||0)}</td></tr></tfoot></table></div>`;
   });
   h+=`<p class="small muted">Metas semanais e de fim de semana são pagas na segunda-feira seguinte. As demais, até o 5º dia útil do mês seguinte, na conta de premiação. Nenhum prêmio é pago sem o toque do sino na loja.</p>
@@ -391,7 +398,10 @@ function copyText(t,btn){
 document.addEventListener("click",e=>{const b=e.target.closest("button[data-wa]");if(!b)return;copyText(msgVend(b.dataset.wa),b);});
 
 /* ---------- Eventos ---------- */
-document.addEventListener("change",e=>{const t=e.target;if(!t.dataset||!t.dataset.c)return;
+document.addEventListener("change",e=>{const t=e.target;
+  if(t.dataset&&t.dataset.all){const s=t.dataset.all,r=apurar(CICLO);
+    metasDo(CICLO).forEach(m=>{if(r.metas[m.codigo].porVend[s].premio>0)marcar("pg_"+m.codigo,s,{valor:t.checked?1:0});});atualizar();return;}
+  if(!t.dataset||!t.dataset.c)return;
   if(t.type==="checkbox"){marcar(t.dataset.c,t.dataset.v,{[t.dataset.k]:t.dataset.k==="valor"?(t.checked?1:0):t.checked});atualizar();}});
 document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset.c||t.type==="checkbox")return;
   const raw=t.value.trim();marcar(t.dataset.c,t.dataset.v,{valor:raw===""?"":num(raw)});atualizar();});

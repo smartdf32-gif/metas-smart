@@ -62,6 +62,9 @@ Regras do cálculo:
 Nas metas de fim de semana o app mostra a coluna **Não trabalhou**. Marque para quem folgou: ele não ganha o prêmio nem o bônus de R$ 50 daquele fim de semana, e esse fim de semana não conta como meta não batida nas métricas.
 Isso vale para toda meta individual cuja `secao` tenha o texto "Fim de semana". No bônus da loja, o código da meta deve ser o código da individual mais `_loja` (ex.: `fds1` e `fds1_loja`).
 
+## Controle de pagamento
+Em cada meta há a coluna **Pago**: marque quando o prêmio daquela meta for pago ao vendedor. A caixinha só aparece quando há prêmio. No resumo, a coluna **Pago (tudo)** marca ou desmarca todas as metas premiadas do vendedor de uma vez, e os cartões mostram **Já pago** e **Ainda não pago**. O relatório do colaborador mostra "Pago ✓" ao lado do prêmio pago.
+
 ## Vendedores
 Aba **Vendedores**: para tirar alguém do app, mude `ativo` para `nao`. Para incluir, adicione uma linha.
 
