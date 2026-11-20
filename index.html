@@ -171,7 +171,8 @@ function metasDo(ciclo){
     const k=String(c.codigo);
     if(!m[k]) m[k]={codigo:k,meta:c.meta,secao:c.secao,ordem:num(c.ordem),periodo:c.periodo,escopo:String(c.escopo).toLowerCase(),
       tipo:String(c.tipo_valor).toLowerCase(),part:String(c.so_quem_participou).toLowerCase()==="sim",excl:String(c.exclui_se_bateu||""),
-      pagamento:c.pagamento,obs:c.observacao,faixas:[]};
+      pagamento:c.pagamento,obs:c.observacao,faixas:[],
+      folga:/fim de semana/i.test(String(c.secao))&&String(c.escopo).toLowerCase()==="individual"};
     m[k].faixas.push({nome:c.faixa,min:num(c.minimo),premio:num(c.premio)});
   });
   const list=Object.values(m);list.forEach(x=>x.faixas.sort((a,b)=>a.min-b.min));
@@ -189,15 +190,18 @@ function apurar(ciclo){
     const r={meta:m,porVend:{},loja:null};
     if(m.escopo==="loja"){
       const v=num(get(ciclo,m.codigo,"LOJA").valor),t=tier(v,m.faixas);r.loja={valor:v,tier:t};
-      vs.forEach(s=>{const p=get(ciclo,m.codigo,s).participou;const ok=t&&(!m.part||p);r.porVend[s]={tier:ok?t:null,premio:ok?t.premio:0,participou:p};});
+      vs.forEach(s=>{const p=get(ciclo,m.codigo,s).participou;const base=m.codigo.replace(/_loja$/,"");
+        const folga=base!==m.codigo&&!!get(ciclo,base,s).participou;
+        const ok=t&&(!m.part||p)&&!folga;r.porVend[s]={tier:ok?t:null,premio:ok?t.premio:0,participou:p,folga};});
     }else{
       vs.forEach(s=>{const raw=get(ciclo,m.codigo,s).valor;const v=num(raw);let t=tier(v,m.faixas);
+        const folga=!!(m.folga&&get(ciclo,m.codigo,s).participou);if(folga)t=null;
         if(t&&m.excl&&hitInd[m.excl+"|"+s])t=null;
         if(t)hitInd[m.codigo+"|"+s]=true;
-        r.porVend[s]={valor:v,raw,tier:t,premio:t?t.premio:0};});
+        r.porVend[s]={valor:v,raw,tier:t,premio:t?t.premio:0,folga};});
     }
     vs.forEach(s=>{const x=r.porVend[s],pv=res.porVend[s];pv.total+=x.premio;pv.secoes[m.secao]=(pv.secoes[m.secao]||0)+x.premio;
-      if(!m.excl){pv.possiveis++;if(x.premio)pv.batidas++;}});
+      if(!m.excl&&!x.folga&&(!m.part||x.participou)){pv.possiveis++;if(x.premio)pv.batidas++;}});
     res.metas[m.codigo]=r;
   });
   res.total=vs.reduce((a,s)=>a+res.porVend[s].total,0);
@@ -251,8 +255,8 @@ function renderApuracao(){
       if(m.part){html+=`<div class="tbl"><table><thead><tr><th>Vendedor</th><th>Trabalhou?</th><th class="r">Prêmio</th></tr></thead><tbody>${
         vs.map(s=>`<tr><td><b>${esc(s)}</b></td><td><input type="checkbox" data-c="${esc(m.codigo)}" data-v="${esc(s)}" data-k="participou" ${get(CICLO,m.codigo,s).participou?"checked":""} aria-label="Trabalhou ${esc(s)}"></td><td class="r money" data-o="p_${esc(m.codigo)}_${esc(s)}"></td></tr>`).join("")}</tbody></table></div>`;}
     }else{
-      html+=`<div class="tbl"><table><thead><tr><th>Vendedor</th><th>${m.tipo==="reais"?"Valor apurado":m.tipo==="sim_nao"?"Sim?":"Quantidade"}</th><th>Status</th><th class="r">Prêmio</th></tr></thead><tbody>${
-        vs.map(s=>`<tr><td><b>${esc(s)}</b></td><td>${inputFor(m,s,get(CICLO,m.codigo,s).valor)}</td><td data-o="s_${esc(m.codigo)}_${esc(s)}"></td><td class="r money" data-o="p_${esc(m.codigo)}_${esc(s)}"></td></tr>`).join("")}</tbody></table></div>`;
+      html+=`<div class="tbl"><table><thead><tr><th>Vendedor</th><th>${m.tipo==="reais"?"Valor apurado":m.tipo==="sim_nao"?"Sim?":"Quantidade"}</th><th>Status</th>${m.folga?"<th>Não trabalhou</th>":""}<th class="r">Prêmio</th></tr></thead><tbody>${
+        vs.map(s=>`<tr><td><b>${esc(s)}</b></td><td>${inputFor(m,s,get(CICLO,m.codigo,s).valor)}</td><td data-o="s_${esc(m.codigo)}_${esc(s)}"></td>${m.folga?`<td><input type="checkbox" id="f_${esc(m.codigo)}_${esc(s)}" data-c="${esc(m.codigo)}" data-v="${esc(s)}" data-k="participou" ${get(CICLO,m.codigo,s).participou?"checked":""} aria-label="Não trabalhou ${esc(s)}"></td>`:""}<td class="r money" data-o="p_${esc(m.codigo)}_${esc(s)}"></td></tr>`).join("")}</tbody></table></div>`;
     }
     html+=`</section>`;
   });
@@ -267,7 +271,7 @@ function atualizar(){
     if(m.escopo==="loja"){const e=O("loja_"+m.codigo);if(e)e.innerHTML=statusChip(m,x.loja.valor,x.loja.tier,x.loja.valor>0)+(x.loja.tier?` <span class="small muted">${brl(x.loja.tier.premio)} por pessoa${m.part?" que trabalhou":""}</span>`:"");}
     vs.forEach(s=>{const p=x.porVend[s];const pe=O("p_"+m.codigo+"_"+s);if(pe)pe.textContent=p.premio?brl(p.premio):"—";
       const se=O("s_"+m.codigo+"_"+s);if(se){let c=statusChip(m,p.valor,p.tier,String(p.raw??"")!==""&&p.raw!==0);
-        if(!p.tier&&m.excl&&p.valor&&r.metas[m.excl]&&r.metas[m.excl].porVend[s].tier)c=`<span class="chip no">Já bateu a meta principal</span>`;se.innerHTML=c;}});
+        if(p.folga)c=`<span class="chip no">Não trabalhou</span>`;else if(!p.tier&&m.excl&&p.valor&&r.metas[m.excl]&&r.metas[m.excl].porVend[s].tier)c=`<span class="chip no">Já bateu a meta principal</span>`;se.innerHTML=c;}});
   });
   // resumo
   const secoes=[...new Set(metasDo(CICLO).map(m=>m.secao))];
@@ -326,12 +330,13 @@ function detalhe(s,r){
     const x=r.metas[m.codigo],p=x.porVend[s],loja=m.escopo==="loja";
     const valor=loja?x.loja.valor:p.valor;
     const excluido=!!(m.excl&&!p.tier&&p.valor&&r.metas[m.excl]&&r.metas[m.excl].porVend[s].tier);
-    return {m,valor,tier:p.tier,lojaTier:loja?x.loja.tier:null,premio:p.premio,loja,trabalhou:p.participou,excluido};
+    return {m,valor,tier:p.tier,lojaTier:loja?x.loja.tier:null,premio:p.premio,loja,trabalhou:p.participou,folga:!!p.folga,excluido};
   });
 }
 const fmtV=(m,v)=>m.tipo==="reais"?brl(v):m.tipo==="sim_nao"?(v?"Sim":"Não"):fmtN(v);
 function resultado(d){
   const m=d.m;
+  if(d.folga)return ["Não trabalhou","no"];
   if(d.excluido)return ["Já recebeu a meta principal","no"];
   if(d.loja&&m.part&&d.lojaTier&&!d.trabalhou)return ["Loja bateu, mas você não trabalhou","warn"];
   if(d.premio>0)return ["Bateu"+(d.tier&&d.tier.nome!=="Meta"?": "+d.tier.nome:""),"ok"];

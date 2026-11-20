@@ -58,6 +58,10 @@ Regras do cálculo:
 - Para medir o faturamento individual mês a mês nas métricas, use sempre o código **`mes`** para a meta de faturamento individual.
 - Use sempre os mesmos códigos para metas parecidas (`google`, `videos`, `parcerias`, `tvbox`...), assim as métricas comparam os meses.
 
+## Quem não trabalha no fim de semana
+Nas metas de fim de semana o app mostra a coluna **Não trabalhou**. Marque para quem folgou: ele não ganha o prêmio nem o bônus de R$ 50 daquele fim de semana, e esse fim de semana não conta como meta não batida nas métricas.
+Isso vale para toda meta individual cuja `secao` tenha o texto "Fim de semana". No bônus da loja, o código da meta deve ser o código da individual mais `_loja` (ex.: `fds1` e `fds1_loja`).
+
 ## Vendedores
 Aba **Vendedores**: para tirar alguém do app, mude `ativo` para `nao`. Para incluir, adicione uma linha.
 
