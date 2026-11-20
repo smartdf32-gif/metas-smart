@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Metas Smart Soluções</title>
 <meta name="theme-color" content="#1655c9">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Metas Smart">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
 <style>
@@ -21,6 +26,7 @@
   --fg:#e6ecf8; --muted:#97a6c4; --accent:#5b93f5; --accent-ink:#0a1222; --accent-soft:#1c2f55;
   --ok:#5fd394; --ok-soft:#133525; --warn:#f0b44c; --warn-soft:#3a2b10; --no:#8592ab; --no-soft:#1b2640; --err:#ff8a7a; color-scheme:dark}}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--body);padding-bottom:env(safe-area-inset-bottom,0px)}
 .bar{position:sticky;top:0;z-index:5;background:var(--accent);color:var(--accent-ink);padding-top:env(safe-area-inset-top,0px)}
@@ -300,6 +306,7 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||!t.dataset
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-v]");if(!b)return;VIEW=b.dataset.v;render();});
 $("#ciclo").addEventListener("change",e=>{CICLO=e.target.value;render();});
 
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
 loadCfg();
 if(CFG&&CFG.url) carregar().catch(e=>renderSetup("Não conectou: "+e.message)); else renderSetup();
 </script>
